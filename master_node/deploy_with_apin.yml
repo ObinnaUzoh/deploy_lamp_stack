@@ -1,0 +1,29 @@
+---
+- name: Deploy LAMP stack and configure cron job
+  hosts: Slave
+  become: yes
+  tasks:
+    - name: Execute bash script on Slave node
+      shell: /home/vagrant/deploy_lamp.sh
+      register: deploy_result
+
+    - name: Debug deploy result
+      debug:
+        var: deploy_result.stdout
+
+    - name: Verify PHP application accessibility
+      uri:
+        url: "http://{{ ansible_default_ipv4.address }}"
+        return_content: yes
+      register: php_app_response
+
+    - name: Debug PHP application response
+      debug:
+        var: php_app_response.content
+
+    - name: Create cron job to check server uptime
+      cron:
+        name: Check server uptime
+        minute: 0
+        hour: 0
+        job: /usr/bin/uptime >> /var/log/uptime.log 2>&1
